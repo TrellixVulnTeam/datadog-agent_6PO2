@@ -190,6 +190,10 @@ func (m *Module) Start() error {
 		ruleFilters = append(ruleFilters, agentVersionFilter)
 	}
 
+	seclRuleFilter := rules.NewSECLRuleFilter(&RuleFilterModel{})
+	macroFilters = append(macroFilters, seclRuleFilter)
+	ruleFilters = append(ruleFilters, seclRuleFilter)
+
 	m.policyOpts = rules.PolicyLoaderOpts{
 		MacroFilters: macroFilters,
 		RuleFilters:  ruleFilters,
