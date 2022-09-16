@@ -26,10 +26,12 @@ import (
 
 var expectedFormats = []string{"json", "protobuf"}
 
+const testActivityDumpRateLimiter = 100
+
 func TestActivityDumps(t *testing.T) {
 	test, err := newTestModule(t, nil, []*rules.RuleDefinition{}, testOpts{
 		enableActivityDump:      true,
-		activityDumpRateLimiter: 10,
+		activityDumpRateLimiter: testActivityDumpRateLimiter,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -229,7 +231,7 @@ func TestActivityDumps(t *testing.T) {
 
 		time.Sleep(2 * time.Second) // a quick sleep to let starts and snapshot events to be added to the dump
 
-		for i := 0; i < 20; i++ {
+		for i := 0; i < testActivityDumpRateLimiter*10; i++ {
 			if err := os.MkdirAll("/tmp/ratelimiter", os.ModePerm); err != nil {
 				t.Fatal(err)
 			}
@@ -265,8 +267,10 @@ func TestActivityDumps(t *testing.T) {
 			if ratelimiter == nil {
 				t.Fatal("Didn't find /tmp/ratelimiter node")
 			}
-			if len(ratelimiter.Children) != 10 {
-				t.Fatalf("Didn't find the good number of files in tmp node (%d/10)", len(ratelimiter.Children))
+			numberOfFiles := len(ratelimiter.Children)
+			if numberOfFiles < testActivityDumpRateLimiter/5 || numberOfFiles > testActivityDumpRateLimiter {
+				t.Fatalf("Didn't find the good number of files in tmp node (%d/%d)",
+					len(ratelimiter.Children), testActivityDumpRateLimiter)
 			}
 
 			return true
