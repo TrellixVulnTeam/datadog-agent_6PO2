@@ -84,6 +84,8 @@ platforms:
 - name: <%= platform_name %>
   attributes:
     color_idx: <%= idx %>
+    compliance:
+      python_version: <%= ENV['PYTHON_MATRIX'] || '3.6' %>
   driver:
     <% if windows %>
     connection_timeout: 20

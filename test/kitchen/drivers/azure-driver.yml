@@ -128,6 +128,8 @@ platforms:
 - name: <%= platform_name %>
   attributes:
     color_idx: <%= idx %>
+    compliance:
+      python_version: <%= ENV['PYTHON_MATRIX'] || '3.6' %>
   driver_config:
     machine_size: <%= size %>
     <% if platform[1] == "urn" %>

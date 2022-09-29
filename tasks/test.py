@@ -226,6 +226,7 @@ def test(
     rerun_fails=None,
     go_mod="mod",
     junit_tar="",
+    test_names="",
 ):
     """
     Run all the tools and tests on the given module and targets.
@@ -341,7 +342,7 @@ def test(
         os.remove(save_result_json)
 
     cmd = 'gotestsum {junit_file_flag} {json_flag} --format pkgname {rerun_fails} --packages="{packages}" -- {verbose} -mod={go_mod} -vet=off -timeout {timeout}s -tags "{go_build_tags}" -gcflags="{gcflags}" '
-    cmd += '-ldflags="{ldflags}" {build_cpus} {race_opt} -short {covermode_opt} {coverprofile} {nocache}'
+    cmd += '-ldflags="{ldflags}" {build_cpus} {race_opt} -short {covermode_opt} {coverprofile} {nocache} -run="{run}"'
     args = {
         "go_mod": go_mod,
         "gcflags": gcflags,
@@ -355,6 +356,7 @@ def test(
         "nocache": nocache,
         "json_flag": f'--jsonfile "{GO_TEST_RESULT_TMP_JSON}" ' if save_result_json else "",
         "rerun_fails": f"--rerun-fails={rerun_fails}" if rerun_fails else "",
+        "run": test_names,
     }
 
     # Test

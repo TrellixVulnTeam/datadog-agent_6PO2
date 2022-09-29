@@ -9,9 +9,11 @@
 package http
 
 import (
+	"fmt"
 	"os"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/twmb/murmur3"
 
@@ -360,6 +362,9 @@ func (o *sslProgram) Stop() {
 
 func addHooks(m *manager.Manager, probes []manager.ProbesSelector) func(string) error {
 	return func(libPath string) error {
+		if strings.Contains(libPath, "python") {
+			fmt.Println("hey")
+		}
 		uid := getUID(libPath)
 
 		for i := range probes {
@@ -386,7 +391,6 @@ func addHooks(m *manager.Manager, probes []manager.ProbesSelector) func(string) 
 					ProbeIdentificationPair: identifier,
 					BinaryPath:              libPath,
 				}
-
 				_ = m.AddHook("", newProbe)
 			}
 			if err := probes[i].RunValidator(m); err != nil {

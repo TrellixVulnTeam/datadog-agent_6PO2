@@ -145,6 +145,8 @@ berks vendor ./cookbooks
 
 set +o pipefail
 
+echo "Python matrix: ${PYTHON_MATRIX:-none}"
+echo "test filter: ${TEST_FILTER:-none}"
 # Initially test every suite, as we only generate those we want to run
 test_suites=".*"
 # This for loop retries kitchen tests failing because of infrastructure/networking issues
