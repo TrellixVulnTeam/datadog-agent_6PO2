@@ -39,9 +39,8 @@ package 'python3'
 #   options virtualenv_version: false
 # end
 
-execute "print python version" do
-  status_out = `python3 --version`
-  puts status_out
+execute "python3 --version" do
+    live_stream true
 end
 
 case node[:platform]
