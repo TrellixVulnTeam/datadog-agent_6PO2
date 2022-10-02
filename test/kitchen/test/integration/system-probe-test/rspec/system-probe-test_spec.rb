@@ -34,7 +34,7 @@ end
 
 Dir.glob('/tmp/system-probe-tests/**/testsuite').each do |f|
   pkg = f.delete_prefix('/tmp/system-probe-tests').delete_suffix('/testsuite')
-  file_filter = ENV['TEST_FILTER'] || ''
+  file_filter = node['compliance']['test_filter'] || ''
   describe "prebuilt system-probe tests for #{pkg}" do
     it 'successfully runs' do
       Dir.chdir(File.dirname(f)) do

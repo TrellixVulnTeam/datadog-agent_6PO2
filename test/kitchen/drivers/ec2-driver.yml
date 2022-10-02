@@ -85,7 +85,8 @@ platforms:
   attributes:
     color_idx: <%= idx %>
     compliance:
-      python_version: <%= ENV['PYTHON_MATRIX'] || '3.6' %>
+      python_version: <%= ENV['PYTHON_MATRIX'] || '3' %>
+      file_filter: <%= ENV['TEST_FILTER'] || '' %>
   driver:
     <% if windows %>
     connection_timeout: 20

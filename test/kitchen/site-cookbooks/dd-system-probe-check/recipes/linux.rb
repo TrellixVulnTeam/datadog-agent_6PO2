@@ -38,6 +38,11 @@ python_runtime '3' do
   options virtualenv_version: false
 end
 
+execute "print python version" do
+  status_out = `python3 --version`
+  puts status_out
+end
+
 case node[:platform]
   when 'centos', 'redhat'
     package 'iptables'
