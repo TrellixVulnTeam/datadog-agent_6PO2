@@ -32,11 +32,12 @@ package 'kernel headers' do
   end
 end
 
-python3_version = node['compliance']['python_version'] || '3.6'
-python_runtime '3' do
-  options version: python3_version
-  options virtualenv_version: false
-end
+package 'python3'
+# python3_version = node['compliance']['python_version'] || '3.6'
+# python_runtime '3' do
+#   options version: python3_version
+#   options virtualenv_version: false
+# end
 
 execute "print python version" do
   status_out = `python3 --version`
