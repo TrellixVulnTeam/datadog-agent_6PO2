@@ -1,7 +1,3 @@
-require 'pp'
-
-pp ENV
-
 if platform?('centos')
   include_recipe '::old_vault'
 end
