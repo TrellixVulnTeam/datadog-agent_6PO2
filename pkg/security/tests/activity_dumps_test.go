@@ -26,7 +26,7 @@ import (
 
 var expectedFormats = []string{"json", "protobuf"}
 
-const testActivityDumpRateLimiter = 100
+const testActivityDumpRateLimiter = 20
 
 func TestActivityDumps(t *testing.T) {
 	test, err := newTestModule(t, nil, []*rules.RuleDefinition{}, testOpts{
@@ -235,11 +235,12 @@ func TestActivityDumps(t *testing.T) {
 			if err := os.MkdirAll("/tmp/ratelimiter", os.ModePerm); err != nil {
 				t.Fatal(err)
 			}
+			defer os.Remove("/tmp/ratelimiter")
 			temp, err := os.CreateTemp("/tmp/ratelimiter", "ad-test-create")
 			if err != nil {
 				t.Fatal(err)
 			}
-			defer os.Remove(temp.Name())
+			os.Remove(temp.Name())
 		}
 
 		time.Sleep(1 * time.Second) // a quick sleep to let events to be added to the dump
