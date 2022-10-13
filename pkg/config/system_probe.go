@@ -126,6 +126,7 @@ func InitSystemProbeConfig(cfg Config) {
 	cfg.BindEnvAndSetDefault(join(spNS, "http_map_cleaner_interval_in_s"), 300)
 	cfg.BindEnvAndSetDefault(join(spNS, "http_idle_connection_ttl_in_s"), 30)
 
+	cfg.BindEnvAndSetDefault(join(netNS, "enable_classification"), false)
 	cfg.BindEnvAndSetDefault(join(spNS, "enable_conntrack"), true)
 	cfg.BindEnvAndSetDefault(join(spNS, "conntrack_max_state_size"), 65536*2)
 	cfg.BindEnvAndSetDefault(join(spNS, "conntrack_rate_limit"), 500)

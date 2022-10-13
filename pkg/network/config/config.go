@@ -87,6 +87,9 @@ type Config struct {
 	// Currently Windows only
 	HTTPMaxRequestFragment int64
 
+	// ClassificationEnabled specifies whether network classification is enabled
+	ClassificationEnabled bool
+
 	// UDPConnTimeout determines the length of traffic inactivity between two
 	// (IP, port)-pairs before declaring a UDP connection as inactive. This is
 	// set to /proc/sys/net/netfilter/nf_conntrack_udp_timeout on Linux by
@@ -237,6 +240,8 @@ func New() *Config {
 		MaxTrackedHTTPConnections: cfg.GetInt64(join(netNS, "max_tracked_http_connections")),
 		HTTPNotificationThreshold: cfg.GetInt64(join(netNS, "http_notification_threshold")),
 		HTTPMaxRequestFragment:    cfg.GetInt64(join(netNS, "http_max_request_fragment")),
+
+		ClassificationEnabled: cfg.GetBool(join(netNS, "enable_classification")),
 
 		EnableConntrack:              cfg.GetBool(join(spNS, "enable_conntrack")),
 		ConntrackMaxStateSize:        cfg.GetInt(join(spNS, "conntrack_max_state_size")),
