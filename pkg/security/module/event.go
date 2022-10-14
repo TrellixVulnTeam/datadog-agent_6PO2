@@ -7,6 +7,8 @@
 
 package module
 
+import "github.com/DataDog/datadog-agent/pkg/security/secl/rules"
+
 // AgentContext serializes the agent context to JSON
 // easyjson:json
 type AgentContext struct {
@@ -22,4 +24,9 @@ type AgentContext struct {
 type Signal struct {
 	AgentContext `json:"agent"`
 	Title        string `json:"title"`
+}
+
+// EventSender defines an event sender
+type EventSender interface {
+	SendEvent(rule *rules.Rule, event Event, extTagsCb func() []string, service string)
 }
