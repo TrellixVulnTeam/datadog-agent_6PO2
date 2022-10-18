@@ -12,6 +12,52 @@
 long bpf_skb_load_bytes(const void *skb, u32 offset, void *to, u32 len) {return 0;}
 #endif
 
+static __inline int32_t read_big_endian_int32(const char* buf) {
+  int32_t length = *((int32_t*)buf);
+  return bpf_ntohl(length);
+}
+
+static __inline int16_t read_big_endian_int16(const char* buf) {
+  int16_t length = *((int16_t*)buf);
+  return bpf_ntohl(length);
+}
+
+// Checking if the buffer represents kafka message
+static __always_inline bool is_kafka(const char* buf, __u32 buf_size) {
+    if (buf_size < KAFKA_MIN_SIZE) {
+        return false;
+    }
+
+    if (buf == NULL) {
+        return false;
+    }
+
+    const int32_t message_size = read_big_endian_int32(buf) + 4;
+
+    // Enforcing count to be exactly message_size + 4 to mitigate mis-classification.
+    // However, this will miss long messages broken into multiple reads.
+    if (message_size < 0 || buf_size != (__u32)message_size) {
+        return false;
+    }
+
+    const int16_t request_api_key = read_big_endian_int16(buf);
+    if (request_api_key < 0 || request_api_key > KAFKA_MAX_VERSION) {
+        return false;
+    }
+
+    const int16_t request_api_version = read_big_endian_int16(buf + 2);
+    if (request_api_version < 0 || request_api_version > KAFKA_MAX_API) {
+        return false;
+    }
+
+    const int32_t correlation_id = read_big_endian_int32(buf + 4);
+    if (correlation_id < 0) {
+        return false;
+    }
+
+    return true;
+}
+
 // The method checks if the given buffer starts with the HTTP2 marker as defined in https://datatracker.ietf.org/doc/html/rfc7540.
 // We check that the given buffer is not empty and its size is at least 24 bytes.
 static __always_inline bool is_http2(const char* buf, __u32 buf_size) {
@@ -75,6 +121,8 @@ static __always_inline void classify_protocol(protocol_t *protocol, const char *
         *protocol = PROTOCOL_HTTP;
     } else if (is_http2(buf, size)) {
         *protocol = PROTOCOL_HTTP2;
+    } else if (is_kafka(buf, size)) {
+        *protocol = PROTOCOL_KAFKA;
     } else {
         *protocol = PROTOCOL_UNKNOWN;
     }
