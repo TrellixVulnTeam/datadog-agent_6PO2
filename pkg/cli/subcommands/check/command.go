@@ -45,8 +45,6 @@ import (
 
 // cliParams are the command-line arguments for this subcommand
 type cliParams struct {
-	// *command.GlobalParams
-
 	// cmd is the running cobra.Command
 	cmd *cobra.Command
 
