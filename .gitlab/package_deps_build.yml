@@ -4,14 +4,15 @@
 
 .generate_minimized_btfs_common:
   stage: package_deps_build
-  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/datadog-agent-buildimages/system-probe_x64:$DATADOG_AGENT_BTF_GEN_BUILDIMAGES
+  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/datadog-agent-buildimages/btf-gen:$DATADOG_AGENT_BTF_GEN_BUILDIMAGES
   tags: ["runner:main"]
   script:
     - cd $CI_PROJECT_DIR
     - $S3_CP_CMD $S3_PERMANENT_ARTIFACTS_URI/btfs-$ARCH.tar.gz .
     - tar -xf btfs-$ARCH.tar.gz
     - inv -e system-probe.generate-minimized-btfs --source-dir "$CI_PROJECT_DIR/btfs-$ARCH" --output-dir "$CI_PROJECT_DIR/minimized-btfs" --input-bpf-programs ""
-    - tar -C minimized-btfs -czf minimized-btfs.tar.gz .
+    - cd minimized-btfs
+    - tar -czf minimized-btfs.tar.gz *
     - $S3_CP_CMD minimized-btfs.tar.gz $S3_ARTIFACTS_URI/minimized-btfs-$ARCH.tar.gz
 
 generate_minimized_btfs_x64:
@@ -19,6 +20,7 @@ generate_minimized_btfs_x64:
   extends: .generate_minimized_btfs_common
   variables:
     ARCH: amd64
+
 
 generate_minimized_btfs_arm64:
   needs: ["build_system-probe-arm64"]

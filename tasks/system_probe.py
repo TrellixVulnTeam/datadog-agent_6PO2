@@ -1108,12 +1108,12 @@ def generate_minimized_btfs(
             btf_filename = file[:len(file)-7]
             compressed_source_btf_path = os.path.join(root, file)
             output_btf_path = os.path.join(output_dir, path_from_root, btf_filename)
-            compressed_output_btf_path = output_btf_path + ".tar.gz"
+            compressed_output_btf_path = output_btf_path + ".tar.xz"
 
             ctx.run(f"tar -xf {compressed_source_btf_path}")
             ctx.run(f"bpftool gen min_core_btf {btf_filename} {output_btf_path} {input_bpf_programs}")
 
             tar_working_directory = os.path.join(output_dir, path_from_root)
-            ctx.run(f"tar -C {tar_working_directory} -czf {compressed_output_btf_path} {btf_filename}")
+            ctx.run(f"tar -C {tar_working_directory} -cJf {compressed_output_btf_path} {btf_filename}")
             ctx.run(f"rm {output_btf_path}")
 
