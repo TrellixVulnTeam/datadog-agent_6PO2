@@ -363,12 +363,16 @@ enum rate_limiter_algo_ids {
     RL_ALGO_TOTAL_NUMBER,
 };
 
+__attribute__((always_inline)) u8 activity_dump_rate_limiter_reset_period(u64 now, struct activity_dump_rate_limiter_ctx* rate_ctx_p) {
+    rate_ctx_p->current_period = now;
+    rate_ctx_p->counter = 0;
+    rate_ctx_p->algo_id = now % RL_ALGO_TOTAL_NUMBER;
+    return 1;
+}
+
 __attribute__((always_inline)) u8 activity_dump_rate_limiter_allow_basic(struct activity_dump_config *config, u64 now, struct activity_dump_rate_limiter_ctx* rate_ctx_p, u64 delta) {
     if (delta > 1000000000) { // if more than 1 sec ellapsed we reset the period
-        rate_ctx_p->current_period = now;
-        rate_ctx_p->counter = 0;
-        rate_ctx_p->algo_id = now % RL_ALGO_TOTAL_NUMBER;
-        return 1;
+        return activity_dump_rate_limiter_reset_period(now, rate_ctx_p);
     }
 
     if (rate_ctx_p->counter >= config->events_rate) { // if we already allowed more than rate
@@ -380,10 +384,7 @@ __attribute__((always_inline)) u8 activity_dump_rate_limiter_allow_basic(struct 
 
 __attribute__((always_inline)) u8 activity_dump_rate_limiter_allow_basic_half(struct activity_dump_config *config, u64 now, struct activity_dump_rate_limiter_ctx* rate_ctx_p, u64 delta) {
     if (delta > 1000000000 / 2) { // if more than 0.5 sec ellapsed we reset the period
-        rate_ctx_p->current_period = now;
-        rate_ctx_p->counter = 0;
-        rate_ctx_p->algo_id = now % RL_ALGO_TOTAL_NUMBER;
-        return 1;
+        return activity_dump_rate_limiter_reset_period(now, rate_ctx_p);
     }
 
     if (rate_ctx_p->counter >= config->events_rate / 2) { // if we already allowed more than rate / 2
@@ -395,19 +396,16 @@ __attribute__((always_inline)) u8 activity_dump_rate_limiter_allow_basic_half(st
 
 __attribute__((always_inline)) u8 activity_dump_rate_limiter_allow_decreasing_droprate(struct activity_dump_config *config, u64 now, struct activity_dump_rate_limiter_ctx* rate_ctx_p, u64 delta) {
     if (delta > 1000000000) { // if more than 1 sec ellapsed we reset the period
-        rate_ctx_p->current_period = now;
-        rate_ctx_p->counter = 0;
-        rate_ctx_p->algo_id = now % RL_ALGO_TOTAL_NUMBER;
-        return 1;
+        return activity_dump_rate_limiter_reset_period(now, rate_ctx_p);
     }
 
     if (rate_ctx_p->counter >= config->events_rate) { // if we already allowed more than rate
         return 0;
-    } else if (rate_ctx_p->counter < (config->events_rate / 5)) { // first 1/5 is not rate limited
+    } else if (rate_ctx_p->counter < (config->events_rate / 4)) { // first 1/4 is not rate limited
         return 1;
     }
 
-    // if we are between rate / 5 and rate, apply a decreasing rate of:
+    // if we are between rate / 4 and rate, apply a decreasing rate of:
     // (counter * 100) / (rate) %
     else if (now % ((rate_ctx_p->counter * 100) / config->events_rate) == 0) {
         return 1;
@@ -417,19 +415,16 @@ __attribute__((always_inline)) u8 activity_dump_rate_limiter_allow_decreasing_dr
 
 __attribute__((always_inline)) u8 activity_dump_rate_limiter_allow_increasing_droprate(struct activity_dump_config *config, u64 now, struct activity_dump_rate_limiter_ctx* rate_ctx_p, u64 delta) {
     if (delta > 1000000000) { // if more than 1 sec ellapsed we reset the period
-        rate_ctx_p->current_period = now;
-        rate_ctx_p->counter = 0;
-        rate_ctx_p->algo_id = now % RL_ALGO_TOTAL_NUMBER;
-        return 1;
+        return activity_dump_rate_limiter_reset_period(now, rate_ctx_p);
     }
 
     if (rate_ctx_p->counter >= config->events_rate) { // if we already allowed more than rate
         return 0;
-    } else if (rate_ctx_p->counter < (config->events_rate / 5)) { // first 1/5 is not rate limited
+    } else if (rate_ctx_p->counter < (config->events_rate / 4)) { // first 1/4 is not rate limited
         return 1;
     }
 
-    // if we are between rate / 5 and rate, apply an increasing rate of:
+    // if we are between rate / 4 and rate, apply an increasing rate of:
     // 100 - ((counter * 100) / (rate)) %
     else if (now % (100 - ((rate_ctx_p->counter * 100) / config->events_rate)) == 0) {
         return 1;

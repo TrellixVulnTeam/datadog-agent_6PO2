@@ -231,16 +231,13 @@ func TestActivityDumps(t *testing.T) {
 
 		time.Sleep(2 * time.Second) // a quick sleep to let starts and snapshot events to be added to the dump
 
+		tempDir := t.TempDir()
+		defer os.RemoveAll(tempDir)
 		for i := 0; i < testActivityDumpRateLimiter*10; i++ {
-			if err := os.MkdirAll("/tmp/ratelimiter", os.ModePerm); err != nil {
-				t.Fatal(err)
-			}
-			defer os.Remove("/tmp/ratelimiter")
-			temp, err := os.CreateTemp("/tmp/ratelimiter", "ad-test-create")
+			_, err := os.CreateTemp(tempDir, "ad-test-create")
 			if err != nil {
 				t.Fatal(err)
 			}
-			os.Remove(temp.Name())
 		}
 
 		time.Sleep(1 * time.Second) // a quick sleep to let events to be added to the dump
@@ -259,19 +256,22 @@ func TestActivityDumps(t *testing.T) {
 				t.Fatal("Captured more than one testsuite node")
 			}
 
-			node := nodes[0]
-			tmp := node.Files["tmp"]
-			if tmp == nil {
-				t.Fatal("Didn't find /tmp node")
+			dirs := strings.Split(tempDir, "/")
+			node := nodes[0].Files[dirs[1]]
+			if node == nil {
+				t.Fatalf("Didn't find %s node", dirs[1])
 			}
-			ratelimiter := tmp.Children["ratelimiter"]
-			if ratelimiter == nil {
-				t.Fatal("Didn't find /tmp/ratelimiter node")
+			for _, dir := range dirs[2:] {
+				node = node.Children[dir]
+				if node == nil {
+					t.Fatalf("Didn't find %s node", dir)
+				}
 			}
-			numberOfFiles := len(ratelimiter.Children)
-			if numberOfFiles < testActivityDumpRateLimiter/5 || numberOfFiles > testActivityDumpRateLimiter {
+
+			numberOfFiles := len(node.Children)
+			if numberOfFiles < testActivityDumpRateLimiter/4 || numberOfFiles > testActivityDumpRateLimiter {
 				t.Fatalf("Didn't find the good number of files in tmp node (%d/%d)",
-					len(ratelimiter.Children), testActivityDumpRateLimiter)
+					numberOfFiles, testActivityDumpRateLimiter)
 			}
 
 			return true
