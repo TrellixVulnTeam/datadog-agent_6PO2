@@ -144,6 +144,7 @@ func NewTracer(config *config.Config) (*Tracer, error) {
 		}
 	}
 
+	return nil, errors.New("bla")
 	var bpfTelemetry *telemetry.EBPFTelemetry
 	if usmSupported {
 		bpfTelemetry = telemetry.NewEBPFTelemetry()

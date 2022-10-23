@@ -897,13 +897,19 @@ func (e *eventGenerator) Generate(status *netebpf.TracerStatus, expected *fieldV
 			return err
 		}
 
-		sport, _ := strconv.Atoi(sportString)
+		sport, err := strconv.Atoi(sportString)
+		if err != nil {
+			return err
+		}
 		expected.sport = uint16(sport)
 		_, dportString, err := net.SplitHostPort(e.tcpConn.RemoteAddr().String())
 		if err != nil {
 			return err
 		}
-		dport, _ := strconv.Atoi(dportString)
+		dport, err := strconv.Atoi(dportString)
+		if err != nil {
+			return err
+		}
 		expected.dport = uint16(dport)
 
 		_, err = e.tcpConn.Write([]byte("GET /request\r\n"))
