@@ -12,8 +12,6 @@ import (
 	"time"
 
 	"go.uber.org/atomic"
-
-	"github.com/DataDog/datadog-agent/pkg/remoteconfig/state/products/apmsampling"
 )
 
 // DynamicConfig contains configuration items which may change
@@ -33,9 +31,8 @@ func NewDynamicConfig() *DynamicConfig {
 
 // State specifies the current state of DynamicConfig
 type State struct {
-	Rates      map[string]float64
-	Mechanisms map[string]apmsampling.SamplingMechanism
-	Version    string
+	Rates   map[string]float64
+	Version string
 }
 
 // rmc specifies a tuplet of rate, limit, and color.
@@ -71,7 +68,7 @@ func (rbs *RateByService) SetAll(rates map[ServiceSignature]rm) {
 	for k, v := range rates {
 		ks := k.String()
 		v.r = math.Min(math.Max(v.r, 0), 1)
-		if oldV, ok := rbs.rates[ks]; !ok || oldV.r != v.r || oldV.m != v.m {
+		if oldV, ok := rbs.rates[ks]; !ok || oldV.r != v.r {
 			changed = true
 			rbs.rates[ks] = &rmc{
 				rm: v,
@@ -101,15 +98,11 @@ func (rbs *RateByService) GetNewState(version string) State {
 		}
 	}
 	ret := State{
-		Rates:      make(map[string]float64, len(rbs.rates)),
-		Mechanisms: make(map[string]apmsampling.SamplingMechanism, len(rbs.rates)),
-		Version:    rbs.version,
+		Rates:   make(map[string]float64, len(rbs.rates)),
+		Version: rbs.version,
 	}
 	for k, v := range rbs.rates {
 		ret.Rates[k] = v.r
-		if v.m != 0 {
-			ret.Mechanisms[k] = v.m
-		}
 	}
 
 	return ret

@@ -9,7 +9,6 @@ import (
 	"container/list"
 	"sync"
 
-	"github.com/DataDog/datadog-agent/pkg/remoteconfig/state/products/apmsampling"
 	"github.com/DataDog/datadog-agent/pkg/trace/log"
 )
 
@@ -34,10 +33,9 @@ type catalogEntry struct {
 	sig Signature
 }
 
-// rm specifies the pair of rate and mechanism.
+// rm just contains a rate. It used to contain more fields, which is why it is a single-element struct
 type rm struct {
 	r float64
-	m apmsampling.SamplingMechanism
 }
 
 // newServiceLookup returns a new serviceKeyCatalog with maxEntries maximum number of entries.
@@ -77,15 +75,13 @@ func (cat *serviceKeyCatalog) register(svcSig ServiceSignature) Signature {
 
 // ratesByService returns a map of service signatures mapping to the rates identified using
 // the signatures.
-func (cat *serviceKeyCatalog) ratesByService(agentEnv string, localRates map[Signature]float64, remoteRates map[Signature]rm, defaultRate float64) map[ServiceSignature]rm {
-	rbs := make(map[ServiceSignature]rm, len(localRates)+1)
+func (cat *serviceKeyCatalog) ratesByService(agentEnv string, rates map[Signature]float64, defaultRate float64) map[ServiceSignature]rm {
+	rbs := make(map[ServiceSignature]rm, len(rates)+1)
 	cat.mu.Lock()
 	defer cat.mu.Unlock()
 	for key, el := range cat.items {
 		sig := el.Value.(catalogEntry).sig
-		if r, ok := remoteRates[sig]; ok {
-			rbs[key] = r
-		} else if rate, ok := localRates[sig]; ok {
+		if rate, ok := rates[sig]; ok {
 			rbs[key] = rm{
 				r: rate,
 			}

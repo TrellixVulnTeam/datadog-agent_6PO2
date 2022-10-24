@@ -14,20 +14,16 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/remoteconfig/state/products/apmsampling"
 	"github.com/DataDog/datadog-agent/pkg/trace/config"
 	"github.com/DataDog/datadog-agent/pkg/trace/log"
-	"github.com/DataDog/datadog-agent/pkg/trace/sampler"
 )
 
 type apmsamplingRemoteConfigID string
 
 const (
-	dynamicRatesByService     apmsamplingRemoteConfigID = "dynamic_rates"
-	userDefinedRatesByService apmsamplingRemoteConfigID = "user_rates"
-	samplerconfig             apmsamplingRemoteConfigID = "samplerconfig"
+	samplerconfig apmsamplingRemoteConfigID = "samplerconfig"
 )
 
 type prioritySampler interface {
 	UpdateTargetTPS(targetTPS float64)
-	UpdateRemoteRates(updates []sampler.RemoteRateUpdate)
 }
 
 type errorsSampler interface {
@@ -76,15 +72,10 @@ func (h *RemoteConfigHandler) Start() {
 }
 
 func (h *RemoteConfigHandler) onUpdate(update map[string]state.APMSamplingConfig) {
-	remoteRateUpdates, samplerconfigPayload, err := h.extractUpdatePayloads(update)
+	samplerconfigPayload, err := h.extractUpdatePayloads(update)
 	if err != nil {
 		log.Error(err)
 		return
-	}
-
-	if len(remoteRateUpdates) != 0 {
-		log.Debugf("updating remote rates with updates: %v", remoteRateUpdates)
-		h.prioritySampler.UpdateRemoteRates(remoteRateUpdates)
 	}
 
 	if samplerconfigPayload != nil {
@@ -93,32 +84,24 @@ func (h *RemoteConfigHandler) onUpdate(update map[string]state.APMSamplingConfig
 	}
 }
 
-func (h *RemoteConfigHandler) extractUpdatePayloads(update map[string]state.APMSamplingConfig) ([]sampler.RemoteRateUpdate, *apmsampling.SamplerConfig, error) {
-	var remoteRateUpdates []sampler.RemoteRateUpdate
+func (h *RemoteConfigHandler) extractUpdatePayloads(update map[string]state.APMSamplingConfig) (*apmsampling.SamplerConfig, error) {
 	var samplerconfigPayload *apmsampling.SamplerConfig
 	for path, conf := range update {
 		configID, err := h.configPathToID(path)
 		if err != nil {
-			return []sampler.RemoteRateUpdate{}, nil, err
+			log.Errorf("%v", err)
+			continue
 		}
 
-		switch configID {
-		case dynamicRatesByService, userDefinedRatesByService:
-			var payload apmsampling.APMSampling
-			_, err := payload.UnmarshalMsg(conf.Config)
-			if err != nil {
-				return []sampler.RemoteRateUpdate{}, nil, fmt.Errorf("failed to unmarshal APMSampling remote config envPayload: %w", err)
-			}
-			remoteRateUpdates = append(remoteRateUpdates, sampler.RemoteRateUpdate{Version: conf.Metadata.Version, Config: payload})
-		case samplerconfig:
+		if configID == samplerconfig {
 			samplerconfigPayload = &apmsampling.SamplerConfig{}
 			err = json.Unmarshal(conf.Config, samplerconfigPayload)
 			if err != nil {
-				return []sampler.RemoteRateUpdate{}, nil, fmt.Errorf("failed to unmarshal SamplerConfig remote config envPayload: %w", err)
+				return nil, fmt.Errorf("failed to unmarshal SamplerConfig remote config envPayload: %w", err)
 			}
 		}
 	}
-	return remoteRateUpdates, samplerconfigPayload, nil
+	return samplerconfigPayload, nil
 }
 
 func (h *RemoteConfigHandler) configPathToID(path string) (apmsamplingRemoteConfigID, error) {
@@ -128,10 +111,6 @@ func (h *RemoteConfigHandler) configPathToID(path string) (apmsamplingRemoteConf
 	}
 
 	switch pathMatch[1] {
-	case string(dynamicRatesByService):
-		return dynamicRatesByService, nil
-	case string(userDefinedRatesByService):
-		return userDefinedRatesByService, nil
 	case string(samplerconfig):
 		return samplerconfig, nil
 	default:

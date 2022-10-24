@@ -11,8 +11,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/DataDog/datadog-agent/pkg/remoteconfig/state/products/apmsampling"
 )
 
 func TestNewDynamicConfig(t *testing.T) {
@@ -22,7 +20,7 @@ func TestNewDynamicConfig(t *testing.T) {
 	assert.NotNil(dc)
 
 	rates := map[ServiceSignature]rm{
-		{"myservice", "myenv"}: {0.5, 2},
+		{"myservice", "myenv"}: {0.5},
 	}
 
 	// Not doing a complete test of the different components of dynamic config,
@@ -30,12 +28,10 @@ func TestNewDynamicConfig(t *testing.T) {
 	dc.RateByService.SetAll(rates)
 	state := dc.RateByService.GetNewState("")
 	assert.Equal(map[string]float64{"service:myservice,env:myenv": 0.5}, state.Rates)
-	assert.Equal(map[string]apmsampling.SamplingMechanism{"service:myservice,env:myenv": 2}, state.Mechanisms)
 	assert.NotEqual("", state.Version)
 
 	state = dc.RateByService.GetNewState(state.Version)
 	assert.Equal(map[string]float64(nil), state.Rates)
-	assert.Equal(map[string]apmsampling.SamplingMechanism(nil), state.Mechanisms)
 }
 
 func TestRateByServiceGetSet(t *testing.T) {
@@ -46,22 +42,19 @@ func TestRateByServiceGetSet(t *testing.T) {
 	}{
 		{
 			in: map[ServiceSignature]rm{
-				{}: {0.1, 2},
+				{}: {0.1},
 			},
 			out: State{
 				Rates: map[string]float64{
 					"service:,env:": 0.1,
 				},
-				Mechanisms: map[string]apmsampling.SamplingMechanism{
-					"service:,env:": 2,
-				},
 			},
 		},
 		{
 			in: map[ServiceSignature]rm{
-				{}:                  {0.3, 2},
-				{"mcnulty", "dev"}:  {0.2, 3},
-				{"postgres", "dev"}: {0.1, 4},
+				{}:                  {0.3},
+				{"mcnulty", "dev"}:  {0.2},
+				{"postgres", "dev"}: {0.1},
 			},
 			out: State{
 				Rates: map[string]float64{
@@ -69,42 +62,30 @@ func TestRateByServiceGetSet(t *testing.T) {
 					"service:mcnulty,env:dev":  0.2,
 					"service:postgres,env:dev": 0.1,
 				},
-				Mechanisms: map[string]apmsampling.SamplingMechanism{
-					"service:,env:":            2,
-					"service:mcnulty,env:dev":  3,
-					"service:postgres,env:dev": 4,
-				},
 			},
 		},
 		{
 			in: map[ServiceSignature]rm{
-				{}: {1, 2},
+				{}: {1},
 			},
 			out: State{
 				Rates: map[string]float64{
 					"service:,env:": 1,
 				},
-				Mechanisms: map[string]apmsampling.SamplingMechanism{
-					"service:,env:": 2,
-				},
 			},
 		},
 		{
 			out: State{
-				Rates:      map[string]float64{},
-				Mechanisms: map[string]apmsampling.SamplingMechanism{},
+				Rates: map[string]float64{},
 			},
 		},
 		{
 			in: map[ServiceSignature]rm{
-				{}: {0.2, 2},
+				{}: {0.2},
 			},
 			out: State{
 				Rates: map[string]float64{
 					"service:,env:": 0.2,
-				},
-				Mechanisms: map[string]apmsampling.SamplingMechanism{
-					"service:,env:": 2,
 				},
 			},
 		},
@@ -121,8 +102,8 @@ func TestRateByServiceLimits(t *testing.T) {
 
 	var rbc RateByService
 	rbc.SetAll(map[ServiceSignature]rm{
-		{"high", ""}: {2, 2},
-		{"low", ""}:  {-1, 2},
+		{"high", ""}: {2},
+		{"low", ""}:  {-1},
 	})
 	assert.Equal(map[string]float64{"service:high,env:": 1, "service:low,env:": 0}, rbc.GetNewState("").Rates)
 }
@@ -130,8 +111,8 @@ func TestRateByServiceLimits(t *testing.T) {
 func TestRateByServiceDefaults(t *testing.T) {
 	rbc := RateByService{}
 	rbc.SetAll(map[ServiceSignature]rm{
-		{"one", "prod"}: {0.5, 0},
-		{"two", "test"}: {0.4, 1},
+		{"one", "prod"}: {0.5},
+		{"two", "test"}: {0.4},
 	})
 	assert.Equal(t, map[string]float64{
 		"service:one,env:prod": 0.5,
@@ -139,27 +120,13 @@ func TestRateByServiceDefaults(t *testing.T) {
 	}, rbc.GetNewState("").Rates)
 }
 
-func TestMechanism(t *testing.T) {
-	rbc := RateByService{}
-	rbc.SetAll(map[ServiceSignature]rm{
-		{"one", "prod"}:   {0.5, 0},
-		{"two", "test"}:   {0.4, 1},
-		{"three", "test"}: {0.4, 0},
-		{"four", "test"}:  {0.4, 3},
-	})
-	assert.Equal(t, map[string]apmsampling.SamplingMechanism{
-		"service:two,env:test":  1,
-		"service:four,env:test": 3,
-	}, rbc.GetNewState("").Mechanisms)
-}
-
 func TestVersionChanges(t *testing.T) {
 	rbc := RateByService{}
 	rates := map[ServiceSignature]rm{
-		{"one", "prod"}:   {0.5, 0},
-		{"two", "test"}:   {0.4, 1},
-		{"three", "test"}: {0.4, 0},
-		{"four", "test"}:  {0.4, 3},
+		{"one", "prod"}:   {0.5},
+		{"two", "test"}:   {0.4},
+		{"three", "test"}: {0.4},
+		{"four", "test"}:  {0.4},
 	}
 
 	previousVersion := rbc.GetNewState("").Version
@@ -175,14 +142,14 @@ func TestVersionChanges(t *testing.T) {
 
 	// received slightly different rates
 	previousVersion = newVersion
-	rates[ServiceSignature{"one", "prod"}] = rm{0.5, 1}
+	rates[ServiceSignature{"one", "prod"}] = rm{0.4}
 	rbc.SetAll(rates)
 	newVersion = rbc.GetNewState("").Version
 	assert.NotEqual(t, previousVersion, newVersion)
 
 	// received an extra rate
 	previousVersion = newVersion
-	rates[ServiceSignature{"newService", "prod"}] = rm{0.99, 2}
+	rates[ServiceSignature{"newService", "prod"}] = rm{0.99}
 	rbc.SetAll(rates)
 	newVersion = rbc.GetNewState("").Version
 	assert.NotEqual(t, previousVersion, newVersion)
@@ -208,11 +175,11 @@ func TestRateByServiceConcurrency(t *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(2)
 
-	rbc.SetAll(map[ServiceSignature]rm{{"mcnulty", "test"}: {1, 1}})
+	rbc.SetAll(map[ServiceSignature]rm{{"mcnulty", "test"}: {1}})
 	go func() {
 		for i := 0; i < n; i++ {
 			rate := float64(i) / float64(n)
-			rbc.SetAll(map[ServiceSignature]rm{{"mcnulty", "test"}: {rate, 2}})
+			rbc.SetAll(map[ServiceSignature]rm{{"mcnulty", "test"}: {rate}})
 		}
 		wg.Done()
 	}()
@@ -255,12 +222,12 @@ func benchRBSSetAll(sigs map[ServiceSignature]rm) func(*testing.B) {
 
 func BenchmarkRateByService(b *testing.B) {
 	sigs := map[ServiceSignature]rm{
-		{}:                 {0.2, 2},
-		{"two", "test"}:    {0.4, 2},
-		{"three", "test"}:  {0.33, 2},
-		{"one", "prod"}:    {0.12, 2},
-		{"five", "test"}:   {0.8, 2},
-		{"six", "staging"}: {0.9, 2},
+		{}:                 {0.2},
+		{"two", "test"}:    {0.4},
+		{"three", "test"}:  {0.33},
+		{"one", "prod"}:    {0.12},
+		{"five", "test"}:   {0.8},
+		{"six", "staging"}: {0.9},
 	}
 
 	b.Run("GetAll", func(b *testing.B) {
