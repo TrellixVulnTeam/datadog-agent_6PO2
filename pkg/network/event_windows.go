@@ -123,6 +123,59 @@ func FlowToConnStat(cs *ConnectionStats, flow *driver.PerFlowData, enableMonoton
 		if isFlowClosed(flow.Flags) {
 			m.TCPClosed = 1
 		}
+
+		if flow.ClassificationStatus == driver.ClassificationClassified {
+			if flow.ClassifyRequest != driver.ClassificationClassified {
+				if flow.ClassifyRequest >= driver.ClassificationRequestHTTPUnknown &&
+					flow.ClassifyRequest <= driver.ClassificationRequestHTTPLast {
+					cs.Protocol = ProtocolHTTP
+				} else if flow.ClassifyRequest == driver.ClassificationRequestHTTP2 {
+					cs.Protocol = ProtocolHTTP2
+				} else if flow.ClassifyRequest == driver.ClassificationRequestTLS {
+					cs.Protocol = ProtocolTLS
+				}
+			}
+			if flow.ClassifyResponse != driver.ClassificationClassified {
+				if flow.ClassifyResponse == driver.ClassificationResponseHTTP {
+					if flow.HttpUpgradeToH2Accepted == 1 {
+						// should we mark this as HTTP2 or HTTP?
+						cs.Protocol = ProtocolHTTP
+					} else {
+						// could have missed the request.  Most likely this is just
+						// resetting the existing value
+						cs.Protocol = ProtocolHTTP
+					}
+				}
+			}
+			if cs.Protocol == ProtocolTLS {
+				// record TLS version number?
+				if flow.Tls_versions_offered != 0 {
+					if flow.Tls_version_chosen != 0 {
+						// flow.Tls_version_chosen will indicate the TLS version
+						// selected by the server
+					}
+				}
+				if flow.Tls_alpn_requested != 0 {
+					// rquested lists the ALPN protocol(s) offered within the request
+					if flow.Tls_alpn_chosen != 0 {
+						// shows protocol chosen inside ALPN.  Should we switch
+						// to HTTP2 or leave TLS?
+						if flow.Tls_alpn_chosen == driver.ALPNProtocolHTTP2 {
+
+						} else if flow.Tls_alpn_chosen == driver.ALPNProtocolHTTP11 {
+
+						}
+					}
+				}
+			}
+		} else if flow.ClassificationStatus == driver.ClassificationUnclassified ||
+			flow.ClassificationStatus == driver.ClassificationUnableInsufficientData {
+			cs.Protocol = ProtocolUnclassified
+		} else {
+			// one of
+			// ClassificationUnableInsufficientData, ClassificationUnknown
+			cs.Protocol = ProtocolUnknown
+		}
 	}
 
 	cs.Monotonic.Put(0, m)
