@@ -9,7 +9,6 @@
 package ebpf
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -54,18 +53,21 @@ func checkEmbeddedCollection(collectionPath string) (*btf.Spec, error) {
 	platform := si.Platform
 	kernelVersion := si.KernelVersion
 
-	path := filepath.Join(collectionPath, platform, "/", kernelVersion+".btf")
-	log.Debugf("checking embedded collection for btf at %s", path)
+	btfFolder := filepath.Join(collectionPath, platform)
+	btfPath := filepath.Join(btfFolder, kernelVersion+".btf")
+	compressedBtfPath := btfPath + ".tar.xz"
 
-	return loadBTFFrom(path)
+	log.Debugf("checking embedded collection for btf at %s", compressedBtfPath)
+
+	// All embedded BTFs must first be decompressed
+	if err := archiver.NewTarXz().Unarchive(compressedBtfPath, btfFolder); err != nil {
+		return nil, err
+	}
+
+	return loadBTFFrom(btfPath)
 }
 
 func loadBTFFrom(path string) (*btf.Spec, error) {
-	// All embedded BTFs must first be decompressed
-	if err := archiver.NewTarXz().Unarchive(path+".tar.xz", path); err != nil {
-		return nil, fmt.Errorf("unable to extract btf file: %w", err)
-	}
-
 	data, err := os.Open(path)
 	if err != nil {
 		return nil, err
