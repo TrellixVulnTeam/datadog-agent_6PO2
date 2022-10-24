@@ -9,7 +9,6 @@
 package kernel
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -172,7 +171,7 @@ func newKernelVersion() (*Version, error) {
 		}
 	}
 
-	return nil, errors.New("failed to detect operating system version")
+	return nil, fmt.Errorf("failed to detect operating system version for %s", unameRelease)
 }
 
 // IsDebianKernel returns whether the kernel is a debian kernel
