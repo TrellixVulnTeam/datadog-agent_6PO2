@@ -155,12 +155,12 @@ func TestCatalogEnvMatchAgent(t *testing.T) {
 	const totalRate = 0.2
 
 	rateByService := cat.ratesByService(defaultEnv, rates, totalRate)
-	assert.Equal(map[ServiceSignature]rm{
-		{"service1", defaultEnv}: {0.3},
-		{"service1", ""}:         {0.3},
-		{"service2", defaultEnv}: {0.7},
-		{"service2", ""}:         {0.7},
-		{}:                       {0.2},
+	assert.Equal(map[ServiceSignature]float64{
+		{"service1", defaultEnv}: 0.3,
+		{"service1", ""}:         0.3,
+		{"service2", defaultEnv}: 0.7,
+		{"service2", ""}:         0.7,
+		{}:                       0.2,
 	}, rateByService)
 }
 
@@ -182,25 +182,25 @@ func TestServiceKeyCatalogRatesByService(t *testing.T) {
 	const totalRate = 0.2
 
 	rateByService := cat.ratesByService("", rates, totalRate)
-	assert.Equal(map[ServiceSignature]rm{
-		{"service1", "testEnv"}: {0.3},
-		{"service2", "testEnv"}: {0.7},
-		{}:                      {0.2},
+	assert.Equal(map[ServiceSignature]float64{
+		{"service1", "testEnv"}: 0.3,
+		{"service2", "testEnv"}: 0.7,
+		{}:                      0.2,
 	}, rateByService)
 
 	delete(rates, sig1)
 
 	rateByService = cat.ratesByService("", rates, totalRate)
-	assert.Equal(map[ServiceSignature]rm{
-		{"service2", "testEnv"}: {0.7},
-		{}:                      {0.2},
+	assert.Equal(map[ServiceSignature]float64{
+		{"service2", "testEnv"}: 0.7,
+		{}:                      0.2,
 	}, rateByService)
 
 	delete(rates, sig2)
 
 	rateByService = cat.ratesByService("", rates, totalRate)
-	assert.Equal(map[ServiceSignature]rm{
-		{}: {0.2},
+	assert.Equal(map[ServiceSignature]float64{
+		{}: 0.2,
 	}, rateByService)
 }
 

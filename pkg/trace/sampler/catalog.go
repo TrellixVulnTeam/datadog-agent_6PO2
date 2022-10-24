@@ -33,11 +33,6 @@ type catalogEntry struct {
 	sig Signature
 }
 
-// rm just contains a rate. It used to contain more fields, which is why it is a single-element struct
-type rm struct {
-	r float64
-}
-
 // newServiceLookup returns a new serviceKeyCatalog with maxEntries maximum number of entries.
 // If maxEntries is 0, a default of 5000 (maxCatalogEntries) will be used.
 func newServiceLookup(maxEntries int) *serviceKeyCatalog {
@@ -75,16 +70,14 @@ func (cat *serviceKeyCatalog) register(svcSig ServiceSignature) Signature {
 
 // ratesByService returns a map of service signatures mapping to the rates identified using
 // the signatures.
-func (cat *serviceKeyCatalog) ratesByService(agentEnv string, rates map[Signature]float64, defaultRate float64) map[ServiceSignature]rm {
-	rbs := make(map[ServiceSignature]rm, len(rates)+1)
+func (cat *serviceKeyCatalog) ratesByService(agentEnv string, rates map[Signature]float64, defaultRate float64) map[ServiceSignature]float64 {
+	rbs := make(map[ServiceSignature]float64, len(rates)+1)
 	cat.mu.Lock()
 	defer cat.mu.Unlock()
 	for key, el := range cat.items {
 		sig := el.Value.(catalogEntry).sig
 		if rate, ok := rates[sig]; ok {
-			rbs[key] = rm{
-				r: rate,
-			}
+			rbs[key] = rate
 		} else {
 			cat.ll.Remove(el)
 			delete(cat.items, key)
@@ -95,8 +88,6 @@ func (cat *serviceKeyCatalog) ratesByService(agentEnv string, rates map[Signatur
 			rbs[ServiceSignature{Name: key.Name}] = rbs[key]
 		}
 	}
-	rbs[ServiceSignature{}] = rm{
-		r: defaultRate,
-	}
+	rbs[ServiceSignature{}] = defaultRate
 	return rbs
 }

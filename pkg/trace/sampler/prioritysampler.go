@@ -133,7 +133,7 @@ func (s *PrioritySampler) countSignature(now time.Time, root *pb.Span, signature
 
 // ratesByService returns all rates by service, this information is useful for
 // agents to pick the right service rate.
-func (s *PrioritySampler) ratesByService() map[ServiceSignature]rm {
+func (s *PrioritySampler) ratesByService() map[ServiceSignature]float64 {
 	rates, defaultRate := s.sampler.getAllSignatureSampleRates()
 	return s.catalog.ratesByService(s.agentEnv, rates, defaultRate)
 }

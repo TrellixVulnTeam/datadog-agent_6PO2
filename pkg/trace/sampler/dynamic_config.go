@@ -38,7 +38,7 @@ type State struct {
 // rmc specifies a tuplet of rate, limit, and color.
 // color is used for detecting changes.
 type rmc struct {
-	rm
+	r float64
 	c int8
 }
 
@@ -56,7 +56,7 @@ type RateByService struct {
 
 // SetAll the sampling rate for all services. If a service/env is not
 // in the map, then the entry is removed.
-func (rbs *RateByService) SetAll(rates map[ServiceSignature]rm) {
+func (rbs *RateByService) SetAll(rates map[ServiceSignature]float64) {
 	rbs.mu.Lock()
 	defer rbs.mu.Unlock()
 
@@ -67,11 +67,11 @@ func (rbs *RateByService) SetAll(rates map[ServiceSignature]rm) {
 	}
 	for k, v := range rates {
 		ks := k.String()
-		v.r = math.Min(math.Max(v.r, 0), 1)
-		if oldV, ok := rbs.rates[ks]; !ok || oldV.r != v.r {
+		v = math.Min(math.Max(v, 0), 1)
+		if oldV, ok := rbs.rates[ks]; !ok || oldV.r != v {
 			changed = true
 			rbs.rates[ks] = &rmc{
-				rm: v,
+				r: v,
 			}
 		}
 		rbs.rates[ks].c = rbs.currentColor
